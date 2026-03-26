@@ -25,13 +25,6 @@ jobs:
           npm install -g appium@2.19.0
           appium driver install uiautomator2@2.34.0
 
-      # 🔥 FIX CRÍTICO → iniciar ADB ANTES del emulador
-      - name: Start ADB
-        run: |
-          adb kill-server
-          adb start-server
-          adb devices
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -56,6 +49,10 @@ jobs:
           disable-animations: true
           wait-for-boot: true
           script: |
+            echo "Restarting ADB..."
+            adb kill-server
+            adb start-server
+            
             echo "Waiting for emulator..."
             adb wait-for-device
 

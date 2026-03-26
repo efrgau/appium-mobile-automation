@@ -42,7 +42,27 @@ jobs:
           target: default
           arch: x86_64
           profile: Nexus 6
+          force-avd-creation: true
+          disable-animations: true
           script: |
+            echo "Starting Appium..."
             appium &
-            sleep 10
+
+            echo "Restarting ADB..."
+            adb kill-server
+            adb start-server
+
+            echo "Waiting for emulator..."
+            adb wait-for-device
+
+            echo "Checking boot status..."
+            boot_completed=""
+            until [[ "$boot_completed" == "1" ]]; do
+              boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              echo "Boot status: $boot_completed"
+              sleep 5
+            done
+
+            echo "Emulator fully booted"
+
             pytest -v

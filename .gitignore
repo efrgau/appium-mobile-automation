@@ -1,0 +1,73 @@
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Pytest
+.pytest_cache/
+.cache/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# ==============================
+# IDEs
+# ==============================
+
+# PyCharm / IntelliJ
+.idea/
+
+# VS Code
+.vscode/
+
+# ==============================
+# OS
+# ==============================
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Mac
+.DS_Store
+
+# ==============================
+# Appium / Mobile
+# ==============================
+
+# Screenshots
+screenshots/
+
+# Appium logs
+*.log
+
+# APKs (opcional)
+apps/*.apk
+
+# ==============================
+# Android
+# ==============================
+
+# Build outputs
+*.apk
+*.ap_
+*.aab
+
+# ==============================
+# Misc
+# ==============================
+
+*.tmp
+*.bak
+*.swp

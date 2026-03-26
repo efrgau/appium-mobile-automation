@@ -1,0 +1,48 @@
+name: Mobile Automation Tests
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  android-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install appium
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download APK
+        run: |
+          mkdir -p apps
+          curl -o apps/ApiDemos.apk https://github.com/appium/appium/raw/master/packages/appium/sample-code/apps/ApiDemos-debug.apk
+
+      - name: Run Emulator and Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: default
+          arch: x86_64
+          profile: Nexus 6
+          script: |
+            appium &
+            sleep 10
+            pytest -v

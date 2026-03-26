@@ -15,6 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
@@ -36,7 +43,8 @@ jobs:
       - name: Download APK
         run: |
           mkdir -p apps
-          curl -o apps/ApiDemos.apk https://github.com/appium/appium/raw/master/packages/appium/sample-code/apps/ApiDemos-debug.apk
+          curl -L -o apps/ApiDemos.apk \
+            https://github.com/appium/appium/raw/master/packages/appium/sample-code/apps/ApiDemos-debug.apk
 
       - name: Run Android Emulator and Tests
         uses: reactivecircus/android-emulator-runner@v2
@@ -47,13 +55,20 @@ jobs:
           profile: Nexus 6
           force-avd-creation: true
           disable-animations: true
-          wait-for-boot: true
+          emulator-boot-timeout: 300
+          emulator-options: >-
+            -no-window
+            -gpu swiftshader_indirect
+            -no-snapshot
+            -noaudio
+            -no-boot-anim
+            -no-metrics
           script: |
             echo "Restarting ADB..."
             adb kill-server
             adb start-server
-            
-            echo "Waiting for emulator..."
+
+            echo "Waiting for device..."
             adb wait-for-device
 
             echo "Checking boot status..."
@@ -65,8 +80,17 @@ jobs:
             done
 
             echo "Starting Appium..."
-            appium &
+            appium --log-level info &
+            APPIUM_PID=$!
+            echo "Appium PID: $APPIUM_PID"
 
-            sleep 15
+            echo "Waiting for Appium to be ready..."
+            until curl -s http://localhost:4723/status | grep -q '"ready":true'; do
+              echo "Appium not ready yet..."
+              sleep 3
+            done
+            echo "Appium is ready!"
 
             pytest -v
+
+            kill $APPIUM_PID || true

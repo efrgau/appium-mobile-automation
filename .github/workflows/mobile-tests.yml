@@ -17,10 +17,10 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install appium
+      - name: Install Appium
         run: |
           npm install -g appium@2.19.0
-          appium driver install uiautomator2@latest --source=npm --package=appium-uiautomator2-driver@2.34.0
+          appium driver install uiautomator2@2.34.0
 
       - name: Set up Python
         uses: actions/setup-python@v4

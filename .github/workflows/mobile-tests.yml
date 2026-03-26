@@ -6,7 +6,7 @@ on:
 
 jobs:
   android-tests:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest  # ← único cambio estructural
 
     env:
       ADB_INSTALL_TIMEOUT: 20
@@ -14,13 +14,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
 
       - name: Set up Node
         uses: actions/setup-node@v3
@@ -52,7 +45,7 @@ jobs:
           api-level: 30
           target: default
           arch: x86_64
-          profile: Nexus 6
+          profile: pixel_2
           force-avd-creation: true
           disable-animations: true
           emulator-boot-timeout: 300
@@ -64,33 +57,30 @@ jobs:
             -no-boot-anim
             -no-metrics
           script: |
-            echo "Restarting ADB..."
-            adb kill-server
-            adb start-server
+            echo "=== ADB devices ==="
+            adb devices
 
-            echo "Waiting for device..."
-            adb wait-for-device
+            echo "=== Desactivando animaciones ==="
+            adb shell settings put global window_animation_scale 0.0
+            adb shell settings put global transition_animation_scale 0.0
+            adb shell settings put global animator_duration_scale 0.0
 
-            echo "Checking boot status..."
-            boot_completed=""
-            until [[ "$boot_completed" == "1" ]]; do
-              boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-              echo "Boot status: $boot_completed"
-              sleep 5
-            done
-
-            echo "Starting Appium..."
-            appium --log-level info &
+            echo "=== Iniciando Appium ==="
+            appium --log appium.log --log-level info &
             APPIUM_PID=$!
-            echo "Appium PID: $APPIUM_PID"
 
-            echo "Waiting for Appium to be ready..."
-            until curl -s http://localhost:4723/status | grep -q '"ready":true'; do
-              echo "Appium not ready yet..."
+            echo "=== Esperando Appium ==="
+            elapsed=0
+            until curl -sf http://localhost:4723/status | grep -q '"ready":true'; do
               sleep 3
+              elapsed=$((elapsed + 3))
+              if [[ $elapsed -ge 60 ]]; then
+                cat appium.log
+                exit 1
+              fi
             done
-            echo "Appium is ready!"
+            echo "Appium listo!"
 
-            pytest -v
+            pytest -v --tb=short
 
             kill $APPIUM_PID || true
